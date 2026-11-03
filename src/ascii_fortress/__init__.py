@@ -5,7 +5,7 @@ from time import monotonic
 
 from blessed import Terminal
 
-from ascii_fortress.menus import main_menu, map_size_menu, difficulty_menu
+from ascii_fortress.menus import main_menu, map_size_menu, difficulty_menu, game_over_menu
 from ascii_fortress.difficulty import Difficulty
 from ascii_fortress.settings import Settings
 from ascii_fortress.display import fits, required_size, wait_for_space
@@ -79,12 +79,17 @@ def main() -> None:
                     break
                 difficulty = difficulty_menu(terminal, settings)
                 if difficulty is not None:
-                    run_game(terminal, maps[size], settings, difficulty)
+                    while True:
+                        action = run_game(terminal, maps[size], settings, difficulty)
+                        if action == "quit":
+                            return
+                        if action != "replay":
+                            break
                     break
 
 
-def run_game(terminal: Terminal, courtyard: str, settings: Settings, difficulty: Difficulty) -> None:
-    """Play one fresh run using an already active terminal session."""
+def run_game(terminal: Terminal, courtyard: str, settings: Settings, difficulty: Difficulty) -> str:
+    """Play one fresh run and return the requested navigation action."""
     rows = courtyard.splitlines()
     starts = [
         (x, y)
@@ -133,7 +138,7 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings, difficulty:
 
     width, height = required_size(rows)
     if not wait_for_space(terminal, width, height):
-        return
+        return "menu"
     # Waiting for a bigger terminal must not age the simulation.
     clock_start = monotonic()
     next_bullet_step = clock_start + bullet_step_seconds
@@ -181,7 +186,7 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings, difficulty:
     while True:
         if not fits(terminal, width, height):
             if not wait_for_space(terminal, width, height):
-                return
+                return "menu"
             clock_start = monotonic()
             next_bullet_step = clock_start + bullet_step_seconds
             next_zombie_step = clock_start + zombie_step_seconds
@@ -196,14 +201,9 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings, difficulty:
         timeout = 0.1 if health == 0 else max(0.0, next_bullet_step - monotonic())
         key = terminal.inkey(timeout=timeout).lower()
         if key == "q":
-            break
+            return "menu"
         if not fits(terminal, width, height):
             continue
-        if health == 0:
-            # Leave the final arena visible, but the run is over.
-            draw_status()
-            continue
-
         old_player = (player_x, player_y)
         old_bullet_tiles = {(x, y) for x, y, _, _ in bullets}
         old_zombies = set(zombies)
@@ -295,3 +295,6 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings, difficulty:
             print(terminal.move_yx(y + 3, x) + settings.paint(terminal, "Z", "green"), end="")
         draw_status()
         print(terminal.move_yx(player_y + 3, player_x) + settings.paint(terminal, facing, "cyan"), end="", flush=True)
+        if health == 0:
+            # Return an action instead of recursively launching another run.
+            return game_over_menu(terminal, settings, difficulty, wave, kills)
