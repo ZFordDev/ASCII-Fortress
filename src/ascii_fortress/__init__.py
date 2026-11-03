@@ -5,6 +5,8 @@ from time import monotonic
 
 from blessed import Terminal
 
+from ascii_fortress.menus import main_menu
+
 
 def is_walkable(rows: list[str], x: int, y: int) -> bool:
     """Check terrain bounds before allowing a player or bullet onto a tile."""
@@ -34,7 +36,7 @@ def next_step_toward(
 
 
 def main() -> None:
-    """Set up the terminal and launch a single game run."""
+    """Keep one terminal session open for the menu and fresh game runs."""
     # Keyboard input needs a real terminal, rather than a pipe or output file.
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         print("Run ASCII Fortress in an interactive terminal.")
@@ -49,9 +51,10 @@ def main() -> None:
         raise SystemExit(f"Could not load courtyard map: {error}") from error
 
     terminal = Terminal()
-    # One terminal session can host the upcoming menu and multiple fresh runs.
+    # Return here after each run rather than nesting menus or game sessions.
     with terminal.fullscreen(), terminal.cbreak(), terminal.hidden_cursor():
-        run_game(terminal, courtyard)
+        while main_menu(terminal) == "play":
+            run_game(terminal, courtyard)
 
 
 def run_game(terminal: Terminal, courtyard: str) -> None:
@@ -107,7 +110,7 @@ def run_game(terminal: Terminal, courtyard: str) -> None:
         print(row)
     print()
     print("WASD: move and aim. Space: shoot.")
-    print("Press Q to quit.", flush=True)
+    print("Press Q to return to the main menu.", flush=True)
     print(f"Wave: {wave} | Health: {health} | Remaining: {pending_spawns} | Kills: {kills}", flush=True)
 
     # The map starts below the title, tagline, and blank line (row 3).
@@ -209,7 +212,7 @@ def run_game(terminal: Terminal, courtyard: str) -> None:
         remaining = len(zombies) + pending_spawns
         status = f"Wave: {wave} | Health: {health} | Remaining: {remaining} | Kills: {kills}"
         if health == 0:
-            status += " | Game over. Press Q to quit."
+            status += " | Game over. Q: main menu."
         print(
             terminal.move_yx(len(rows) + 6, 0) + status + terminal.clear_eol,
             end="",
