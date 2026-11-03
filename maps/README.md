@@ -1,7 +1,8 @@
 # Maps
 
 Each `.txt` file is one handcrafted map. Small loads `courtyard.txt` (21 x 11);
-Medium loads `barracks.txt` (41 x 19). The launcher uses the selected map
+Medium loads `barracks.txt` (41 x 19), and Large loads `stronghold.txt` (61 x 27).
+The launcher uses the selected map
 for a movement prototype, placing the player at the start and replacing spawn
 markers with ground. WASD moves one tile per received keypress and changes
 facing, including when a wall blocks the step. Space fires a travelling `*`
@@ -27,3 +28,8 @@ the walkable area connected. Apparently, fortress security took the day off.
 The barracks has four corner entrances, four solid bunk blocks, and a central
 dividing wall with three passages. Every walkable tile connects to the player
 start. The bunk blocks are excellent cover; actual beds are outside the budget.
+
+The stronghold has three long sections connected by gaps in two dividing walls,
+six horizontal barricades, small pillars, and four corner entrances. Its central
+crossing offers room to reposition, with cover breaking up the outer sections.
+More floor space, same terrible tenants.
