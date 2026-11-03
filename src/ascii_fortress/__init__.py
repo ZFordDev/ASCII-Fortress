@@ -1,7 +1,13 @@
 import sys
 from pathlib import Path
+from time import monotonic
 
 from blessed import Terminal
+
+
+def is_walkable(rows: list[str], x: int, y: int) -> bool:
+    """Check terrain bounds before allowing a player or bullet onto a tile."""
+    return 0 <= y < len(rows) and 0 <= x < len(rows[y]) and rows[y][x] == "."
 
 
 def main() -> None:
@@ -39,6 +45,11 @@ def main() -> None:
         "s": (0, 1, "v"),
         "d": (1, 0, ">"),
     }
+    aim_x, aim_y = 0, -1
+    # Each bullet stores (x, y, direction_x, direction_y).
+    bullets: list[tuple[int, int, int, int]] = []
+    bullet_step_seconds = 0.1
+    next_bullet_step = monotonic() + bullet_step_seconds
 
     terminal = Terminal()
     # Context managers restore the screen, cursor, and input mode on exit.
@@ -50,29 +61,45 @@ def main() -> None:
         for row in rows:
             print(row)
         print()
-        print("WASD: move and aim. Shooting is coming soon.")
+        print("WASD: move and aim. Space: shoot.")
         print("Press Q to quit.", flush=True)
 
         # The map starts below the title, tagline, and blank line (row 3).
         print(terminal.move_yx(player_y + 3, player_x) + facing, end="", flush=True)
         # Timed reads leave room for future game updates while nobody is typing.
         while True:
-            key = terminal.inkey(timeout=0.1).lower()
+            # Input must not control bullet speed: idle shots keep travelling.
+            timeout = max(0.0, next_bullet_step - monotonic())
+            key = terminal.inkey(timeout=timeout).lower()
             if key == "q":
                 break
-            if key not in directions:
-                continue
 
-            dx, dy, facing = directions[key]
-            next_x, next_y = player_x + dx, player_y + dy
-            # Check bounds as well as walls. No escaping through Python indexes.
-            if (
-                0 <= next_y < len(rows)
-                and 0 <= next_x < len(rows[next_y])
-                and rows[next_y][next_x] == "."
-            ):
-                print(terminal.move_yx(player_y + 3, player_x) + ".", end="")
-                player_x, player_y = next_x, next_y
+            old_player = (player_x, player_y)
+            old_bullet_tiles = {(x, y) for x, y, _, _ in bullets}
+            now = monotonic()
+            while now >= next_bullet_step:
+                # Walls win every argument. Bullets disappear on contact.
+                bullets = [
+                    (x + dx, y + dy, dx, dy)
+                    for x, y, dx, dy in bullets
+                    if is_walkable(rows, x + dx, y + dy)
+                ]
+                next_bullet_step += bullet_step_seconds
 
-            # Facing changes even when a wall blocks the step.
+            if key in directions:
+                aim_x, aim_y, facing = directions[key]
+                next_x, next_y = player_x + aim_x, player_y + aim_y
+                if is_walkable(rows, next_x, next_y):
+                    player_x, player_y = next_x, next_y
+            elif key == " ":
+                # One shot per received Space, with no ammo limit or cooldown.
+                shot_x, shot_y = player_x + aim_x, player_y + aim_y
+                if is_walkable(rows, shot_x, shot_y):
+                    bullets.append((shot_x, shot_y, aim_x, aim_y))
+
+            # Restore terrain first, then bullets, then the player on top.
+            for x, y in old_bullet_tiles | {old_player}:
+                print(terminal.move_yx(y + 3, x) + rows[y][x], end="")
+            for x, y, _, _ in bullets:
+                print(terminal.move_yx(y + 3, x) + "*", end="")
             print(terminal.move_yx(player_y + 3, player_x) + facing, end="", flush=True)

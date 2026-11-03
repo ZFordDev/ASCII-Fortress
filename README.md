@@ -25,10 +25,13 @@ Grab your imaginary gun, find a chokepoint, and survive increasingly ridiculous 
 
 ## Getting Started
 
-Development has just started. Explore the fullscreen courtyard with `WASD` and press `Q` to quit. Walls block movement, and your character turns to face the direction you press. Shooting and enemies are coming later. The zombies are still getting dressed.
+Development has just started. Explore the fullscreen courtyard with `WASD`, fire with `Space`, and press `Q` to quit. Walls block movement, and your character turns to face the direction you press. Bullets travel in that direction and stop at walls. Enemies are coming later. The zombies are still getting dressed.
 
 Movement currently advances one tile per received keypress; holding a key uses
 your terminal's keyboard repeat behaviour.
+Each received Space fires one bullet, with unlimited ammo and no firing cooldown.
+Bullets move ten tiles per second independently of keyboard input. Holding keys
+and moving while shooting still need testing on Windows and Linux terminals.
 
 With [uv](https://docs.astral.sh/uv/) installed, run the following from the project directory (the folder containing `pyproject.toml`):
 

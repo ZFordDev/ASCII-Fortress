@@ -3,7 +3,8 @@
 Each `.txt` file is one handcrafted map. The launcher loads `courtyard.txt`
 for a movement prototype, placing the player at the start and replacing spawn
 markers with ground. WASD moves one tile per received keypress and changes
-facing, including when a wall blocks the step. Shooting is not implemented yet.
+facing, including when a wall blocks the step. Space fires a travelling `*`
+bullet that disappears when it reaches a wall or the map boundary.
 
 Keep map files as plain ASCII grids with equal-length rows and a solid outer
 wall. Put explanations here rather than inside the grid, where every character
