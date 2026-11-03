@@ -37,6 +37,34 @@ def settings_menu(terminal: Terminal, settings: Settings) -> None:
             settings.colour = not settings.colour
 
 
+def map_size_menu(terminal: Terminal, settings: Settings) -> str | None:
+    """Choose an available size, or go back without starting a run."""
+    options = ("Small (21 x 11)", "Medium (coming soon)", "Large (coming soon)")
+    selected = 0
+    while True:
+        print(terminal.home + terminal.clear, end="")
+        print(settings.paint(terminal, "Choose map size", "cyan"))
+        print("More arena tiles, not bigger characters.")
+        print()
+        for index, label in enumerate(options):
+            marker = ">" if index == selected else " "
+            text = f"{marker} {label}"
+            print(settings.paint(terminal, text, "cyan") if index == selected else text)
+        print()
+        print("Up/Down or W/S: select. Enter: confirm. Escape or Q: back.", flush=True)
+        key = terminal.inkey()
+        if key.name == "KEY_ESCAPE" or key == "\x1b" or key.lower() == "q":
+            return None
+        if key.name == "KEY_UP" or key.lower() == "w":
+            selected = (selected - 1) % len(options)
+        elif key.name == "KEY_DOWN" or key.lower() == "s":
+            selected = (selected + 1) % len(options)
+        elif key.name == "KEY_ENTER" or key in ("\r", "\n"):
+            if selected == 0:
+                return "small"
+            # Keep unavailable sizes on this screen until their maps exist.
+
+
 def main_menu(terminal: Terminal, settings: Settings) -> str:
     """Wait for Play or Quit, with optional pages sharing session settings."""
     options = (

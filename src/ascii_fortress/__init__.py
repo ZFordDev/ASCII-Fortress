@@ -5,7 +5,7 @@ from time import monotonic
 
 from blessed import Terminal
 
-from ascii_fortress.menus import main_menu
+from ascii_fortress.menus import main_menu, map_size_menu
 from ascii_fortress.settings import Settings
 
 
@@ -56,7 +56,8 @@ def main() -> None:
     # Return here after each run rather than nesting menus or game sessions.
     with terminal.fullscreen(), terminal.cbreak(), terminal.hidden_cursor():
         while main_menu(terminal, settings) == "play":
-            run_game(terminal, courtyard, settings)
+            if map_size_menu(terminal, settings) == "small":
+                run_game(terminal, courtyard, settings)
 
 
 def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
