@@ -25,7 +25,12 @@ Grab your imaginary gun, find a chokepoint, and survive increasingly ridiculous 
 
 ## Getting Started
 
-Development has just started. Explore the fullscreen courtyard with `WASD`, fire with `Space`, and press `Q` to quit. Walls block movement, and your character turns to face the direction you press. Bullets travel in that direction and stop at walls. Enemies are coming later. The zombies are still getting dressed.
+Development has just started. Explore the fullscreen courtyard with `WASD`, fire with `Space`, and press `Q` to quit. Walls block movement, and your character turns to face the direction you press. Bullets travel in that direction and stop at walls.
+
+One stationary `Z` target appears at the first map spawn point (top-left in the
+courtyard). It blocks movement and disappears after one bullet hit, increasing
+the displayed kill count. Restart the command for another target. Zombie
+pursuit, player damage, and waves are coming later.
 
 Movement currently advances one tile per received keypress; holding a key uses
 your terminal's keyboard repeat behaviour.

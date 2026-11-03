@@ -37,6 +37,17 @@ def main() -> None:
 
     player_x, player_y = starts[0]
     facing = "^"
+    spawn_points = [
+        (x, y)
+        for y, row in enumerate(rows)
+        for x, tile in enumerate(row)
+        if tile == "X"
+    ]
+    if not spawn_points:
+        raise SystemExit("The courtyard must have at least one zombie spawn (X).")
+    # One stationary target for now. Even zombies need a training day.
+    zombies = {spawn_points[0]}
+    kills = 0
     # Keep the terrain separate so walking away leaves ground behind.
     rows = [row.replace("X", ".").replace("^", ".") for row in rows]
     directions = {
@@ -63,8 +74,11 @@ def main() -> None:
         print()
         print("WASD: move and aim. Space: shoot.")
         print("Press Q to quit.", flush=True)
+        print("Stationary target: one hit to kill. Kills: 0", flush=True)
 
         # The map starts below the title, tagline, and blank line (row 3).
+        for x, y in zombies:
+            print(terminal.move_yx(y + 3, x) + "Z", end="")
         print(terminal.move_yx(player_y + 3, player_x) + facing, end="", flush=True)
         # Timed reads leave room for future game updates while nobody is typing.
         while True:
@@ -76,30 +90,50 @@ def main() -> None:
 
             old_player = (player_x, player_y)
             old_bullet_tiles = {(x, y) for x, y, _, _ in bullets}
+            old_zombies = zombies.copy()
             now = monotonic()
             while now >= next_bullet_step:
                 # Walls win every argument. Bullets disappear on contact.
-                bullets = [
-                    (x + dx, y + dy, dx, dy)
-                    for x, y, dx, dy in bullets
-                    if is_walkable(rows, x + dx, y + dy)
-                ]
+                travelling_bullets = []
+                for x, y, dx, dy in bullets:
+                    destination = (x + dx, y + dy)
+                    if not is_walkable(rows, *destination):
+                        continue
+                    if destination in zombies:
+                        zombies.remove(destination)
+                        kills += 1
+                    else:
+                        travelling_bullets.append((*destination, dx, dy))
+                bullets = travelling_bullets
                 next_bullet_step += bullet_step_seconds
 
             if key in directions:
                 aim_x, aim_y, facing = directions[key]
                 next_x, next_y = player_x + aim_x, player_y + aim_y
-                if is_walkable(rows, next_x, next_y):
+                if is_walkable(rows, next_x, next_y) and (next_x, next_y) not in zombies:
                     player_x, player_y = next_x, next_y
             elif key == " ":
                 # One shot per received Space, with no ammo limit or cooldown.
                 shot_x, shot_y = player_x + aim_x, player_y + aim_y
-                if is_walkable(rows, shot_x, shot_y):
+                # An adjacent target is hit immediately instead of skipped over.
+                if (shot_x, shot_y) in zombies:
+                    zombies.remove((shot_x, shot_y))
+                    kills += 1
+                elif is_walkable(rows, shot_x, shot_y):
                     bullets.append((shot_x, shot_y, aim_x, aim_y))
 
             # Restore terrain first, then bullets, then the player on top.
-            for x, y in old_bullet_tiles | {old_player}:
+            for x, y in old_bullet_tiles | old_zombies | {old_player}:
                 print(terminal.move_yx(y + 3, x) + rows[y][x], end="")
             for x, y, _, _ in bullets:
                 print(terminal.move_yx(y + 3, x) + "*", end="")
+            for x, y in zombies:
+                print(terminal.move_yx(y + 3, x) + "Z", end="")
+            if kills:
+                print(
+                    terminal.move_yx(len(rows) + 6, 0)
+                    + f"Target defeated! Kills: {kills}"
+                    + terminal.clear_eol,
+                    end="",
+                )
             print(terminal.move_yx(player_y + 3, player_x) + facing, end="", flush=True)
