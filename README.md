@@ -19,17 +19,26 @@ Grab your imaginary gun, find a chokepoint, and survive increasingly ridiculous 
 
 - Unlimited ammo. Reloading is overrated.
 - Zombies double every wave. Good luck with that.
-- 4–5 handcrafted maps with walls and chokepoints.
+- Three handcrafted maps: Small, Medium, and Large.
+- Four difficulties, from Easy to Insane.
+- Optional colour. Classic plain text is welcome too.
 - No healing. No second chances.
 - One goal: survive longer than last time.
 
 ## Getting Started
 
-Early development! See the [setup and prototype guide](https://github.com/ZFordDev/ascii-fortress/wiki/Getting-Started) to try it out.
+With [uv](https://docs.astral.sh/uv/) installed, run this from the project folder:
+
+```sh
+uv run ascii-fortress
+```
+
+Choose your map size and difficulty, then try not to become lunch.
+See [Getting Started](https://github.com/ZFordDev/ascii-fortress/wiki/Getting-Started) for setup details.
 
 ## More Info
 
-Want the nerdy details? Check out the [GitHub Wiki](../../wiki).
+Want the rules or the story of my first game? Check out the [GitHub Wiki](https://github.com/ZFordDev/ascii-fortress/wiki).
 
 ## License
 

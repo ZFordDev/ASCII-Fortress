@@ -1,35 +1,21 @@
 # Maps
 
-Each `.txt` file is one handcrafted map. Small loads `courtyard.txt` (21 x 11);
-Medium loads `barracks.txt` (41 x 19), and Large loads `stronghold.txt` (61 x 27).
-The launcher uses the selected map
-for a movement prototype, placing the player at the start and replacing spawn
-markers with ground. WASD moves one tile per received keypress and changes
-facing, including when a wall blocks the step. Space fires a travelling `*`
-bullet that disappears when it reaches a wall or the map boundary.
+| Size | File | Dimensions |
+|---|---|---|
+| Small | `courtyard.txt` | 21 x 11 |
+| Medium | `barracks.txt` | 41 x 19 |
+| Large | `stronghold.txt` | 61 x 27 |
 
-Keep map files as plain ASCII grids with equal-length rows and a solid outer
-wall. Put explanations here rather than inside the grid, where every character
-is a tile.
+Each file is a plain ASCII grid with equal-length rows and a solid outer wall.
+Keep all walkable tiles connected. Explanations belong here, outside the grid.
 
 | Symbol | Meaning |
 |---|---|
-| `#` | Solid wall |
-| `.` | Walkable ground |
-| `^` | Player starting position, facing north (exactly one per map) |
-| `X` | Zombie spawn point (at least one per map) |
+| `#` | Wall |
+| `.` | Ground |
+| `^` | Exactly one player start, facing north |
+| `X` | Zombie spawn, at least one per map |
 
-Player and zombie spawn tiles are walkable ground once their markers are read.
-Spawn markers are map data and will not be shown during gameplay.
-
-The courtyard has four zombie entrances and gaps in its inner walls to keep
-the walkable area connected. Apparently, fortress security took the day off.
-
-The barracks has four corner entrances, four solid bunk blocks, and a central
-dividing wall with three passages. Every walkable tile connects to the player
-start. The bunk blocks are excellent cover; actual beds are outside the budget.
-
-The stronghold has three long sections connected by gaps in two dividing walls,
-six horizontal barricades, small pillars, and four corner entrances. Its central
-crossing offers room to reposition, with cover breaking up the outer sections.
-More floor space, same terrible tenants.
+Start and spawn tiles become ground when loaded. Spawn markers stay hidden.
+Courtyard has inner walls, Barracks has bunk blocks, and Stronghold has long
+sections linked by passages. Same terrible tenants, different floor plans.
