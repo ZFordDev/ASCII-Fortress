@@ -25,7 +25,10 @@ Grab your imaginary gun, find a chokepoint, and survive increasingly ridiculous 
 
 ## Getting Started
 
-Development has just started. The launcher uses Blessed to show a fullscreen courtyard map preview. Press `Q` to quit. Movement and shooting are coming later. The zombies are still getting dressed.
+Development has just started. Explore the fullscreen courtyard with `WASD` and press `Q` to quit. Walls block movement, and your character turns to face the direction you press. Shooting and enemies are coming later. The zombies are still getting dressed.
+
+Movement currently advances one tile per received keypress; holding a key uses
+your terminal's keyboard repeat behaviour.
 
 With [uv](https://docs.astral.sh/uv/) installed, run the following from the project directory (the folder containing `pyproject.toml`):
 
