@@ -47,7 +47,11 @@ def main() -> None:
     # Resolve from the source file so launching from another folder still works.
     maps_path = Path(__file__).resolve().parents[2] / "maps"
     maps = {}
-    for size, filename in (("small", "courtyard.txt"), ("medium", "barracks.txt")):
+    for size, filename in (
+        ("small", "courtyard.txt"),
+        ("medium", "barracks.txt"),
+        ("large", "stronghold.txt"),
+    ):
         try:
             maps[size] = (maps_path / filename).read_text(encoding="ascii")
         except (OSError, UnicodeError) as error:
