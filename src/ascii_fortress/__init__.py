@@ -37,6 +37,15 @@ def next_step_toward(
     return start
 
 
+def hit_zombie(zombies: dict[tuple[int, int], int], position: tuple[int, int]) -> bool:
+    """Apply one bullet hit; report a kill only when health reaches zero."""
+    zombies[position] -= 1
+    if zombies[position] <= 0:
+        del zombies[position]
+        return True
+    return False
+
+
 def main() -> None:
     """Keep one terminal session open for the menu and fresh game runs."""
     # Keyboard input needs a real terminal, rather than a pipe or output file.
@@ -90,7 +99,9 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
     ]
     if not spawn_points:
         raise SystemExit("The courtyard must have at least one zombie spawn (X).")
-    zombies: set[tuple[int, int]] = set()
+    # Position maps to remaining health; movement must carry health with it.
+    zombies: dict[tuple[int, int], int] = {}
+    zombie_health = 1
     wave = 1
     wave_size = 2
     pending_spawns = wave_size
@@ -189,7 +200,7 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
 
         old_player = (player_x, player_y)
         old_bullet_tiles = {(x, y) for x, y, _, _ in bullets}
-        old_zombies = zombies.copy()
+        old_zombies = set(zombies)
         now = monotonic()
         while health > 0 and now >= next_bullet_step:
             # Walls win every argument. Bullets disappear on contact.
@@ -199,8 +210,7 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
                 if not is_walkable(rows, *destination):
                     continue
                 if destination in zombies:
-                    zombies.remove(destination)
-                    kills += 1
+                    kills += hit_zombie(zombies, destination)
                 else:
                     travelling_bullets.append((*destination, dx, dy))
             bullets = travelling_bullets
@@ -216,24 +226,23 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
                 break
             # Advance pursuit on the simulation clock, even without input.
             if next_bullet_step >= next_zombie_step:
-                pursuing_zombies = set()
-                for position in zombies:
+                pursuing_zombies = {}
+                for position, remaining_health in zombies.items():
                     destination = next_step_toward(rows, position, (player_x, player_y))
                     # Stay beside the player; the attack clock handles damage.
                     if destination == (player_x, player_y):
                         destination = position
-                    # Preserve every zombie: sets must not merge two bodies.
+                    # Preserve every zombie: occupied tiles cannot merge bodies.
                     if destination in zombies or destination in pursuing_zombies:
                         destination = position
                     hit = next(
                         (i for i, bullet in enumerate(bullets) if bullet[:2] == destination),
                         None,
                     )
+                    pursuing_zombies[destination] = remaining_health
                     if hit is not None:
                         bullets.pop(hit)
-                        kills += 1
-                    else:
-                        pursuing_zombies.add(destination)
+                        kills += hit_zombie(pursuing_zombies, destination)
                 zombies = pursuing_zombies
                 next_zombie_step += zombie_step_seconds
             if next_bullet_step >= next_spawn_step:
@@ -244,7 +253,7 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
                         index = (spawn_cursor + offset) % len(spawn_points)
                         spawn = spawn_points[index]
                         if spawn not in zombies and spawn != (player_x, player_y) and spawn not in bullet_tiles:
-                            zombies.add(spawn)
+                            zombies[spawn] = zombie_health
                             pending_spawns -= 1
                             spawn_cursor = (index + 1) % len(spawn_points)
                             break
@@ -261,8 +270,7 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
             shot_x, shot_y = player_x + aim_x, player_y + aim_y
             # An adjacent target is hit immediately instead of skipped over.
             if (shot_x, shot_y) in zombies:
-                zombies.remove((shot_x, shot_y))
-                kills += 1
+                kills += hit_zombie(zombies, (shot_x, shot_y))
             elif is_walkable(rows, shot_x, shot_y):
                 bullets.append((shot_x, shot_y, aim_x, aim_y))
 
