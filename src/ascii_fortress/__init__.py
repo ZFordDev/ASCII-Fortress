@@ -56,7 +56,7 @@ def main() -> None:
     # Return here after each run rather than nesting menus or game sessions.
     with terminal.fullscreen(), terminal.cbreak(), terminal.hidden_cursor():
         while main_menu(terminal, settings) == "play":
-            if map_size_menu(terminal, settings) == "small":
+            if map_size_menu(terminal, settings, courtyard) == "small":
                 run_game(terminal, courtyard, settings)
 
 

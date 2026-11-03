@@ -3,6 +3,7 @@
 from blessed import Terminal
 
 from ascii_fortress.settings import Settings
+from ascii_fortress.display import fits, required_size
 
 
 def show_page(terminal: Terminal, settings: Settings, title: str, lines: tuple[str, ...]) -> None:
@@ -37,11 +38,16 @@ def settings_menu(terminal: Terminal, settings: Settings) -> None:
             settings.colour = not settings.colour
 
 
-def map_size_menu(terminal: Terminal, settings: Settings) -> str | None:
+def map_size_menu(terminal: Terminal, settings: Settings, courtyard: str) -> str | None:
     """Choose an available size, or go back without starting a run."""
-    options = ("Small (21 x 11)", "Medium (coming soon)", "Large (coming soon)")
+    width, height = required_size(courtyard.splitlines())
     selected = 0
     while True:
+        available = fits(terminal, width, height)
+        label = f"Small (needs {width} x {height} terminal)"
+        if not available:
+            label += " - too small"
+        options = (label, "Medium (coming soon)", "Large (coming soon)")
         print(terminal.home + terminal.clear, end="")
         print(settings.paint(terminal, "Choose map size", "cyan"))
         print("More arena tiles, not bigger characters.")
@@ -52,7 +58,9 @@ def map_size_menu(terminal: Terminal, settings: Settings) -> str | None:
             print(settings.paint(terminal, text, "cyan") if index == selected else text)
         print()
         print("Up/Down or W/S: select. Enter: confirm. Escape or Q: back.", flush=True)
-        key = terminal.inkey()
+        key = terminal.inkey(timeout=0.1)
+        if not key:
+            continue
         if key.name == "KEY_ESCAPE" or key == "\x1b" or key.lower() == "q":
             return None
         if key.name == "KEY_UP" or key.lower() == "w":
@@ -60,7 +68,7 @@ def map_size_menu(terminal: Terminal, settings: Settings) -> str | None:
         elif key.name == "KEY_DOWN" or key.lower() == "s":
             selected = (selected + 1) % len(options)
         elif key.name == "KEY_ENTER" or key in ("\r", "\n"):
-            if selected == 0:
+            if selected == 0 and available:
                 return "small"
             # Keep unavailable sizes on this screen until their maps exist.
 
