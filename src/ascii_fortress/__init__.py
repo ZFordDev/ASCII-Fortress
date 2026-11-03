@@ -68,8 +68,11 @@ def main() -> None:
     ]
     if not spawn_points:
         raise SystemExit("The courtyard must have at least one zombie spawn (X).")
-    # One zombie for now. The rest are still filling out onboarding paperwork.
-    zombies = {spawn_points[0]}
+    zombies: set[tuple[int, int]] = set()
+    wave = 1
+    wave_size = 2
+    pending_spawns = wave_size
+    spawn_cursor = 0
     kills = 0
     health = 3
     # Keep the terrain separate so walking away leaves ground behind.
@@ -100,7 +103,7 @@ def main() -> None:
         print()
         print("WASD: move and aim. Space: shoot.")
         print("Press Q to quit.", flush=True)
-        print(f"Health: {health} | Kills: {kills}", flush=True)
+        print(f"Wave: {wave} | Health: {health} | Remaining: {pending_spawns} | Kills: {kills}", flush=True)
 
         # The map starts below the title, tagline, and blank line (row 3).
         for x, y in zombies:
@@ -143,6 +146,9 @@ def main() -> None:
                         if destination == (player_x, player_y):
                             health = max(0, health - 1)
                             destination = position
+                        # Preserve every zombie: sets must not merge two bodies.
+                        if destination in zombies or destination in pursuing_zombies:
+                            destination = position
                         hit = next(
                             (i for i, bullet in enumerate(bullets) if bullet[:2] == destination),
                             None,
@@ -153,6 +159,17 @@ def main() -> None:
                         else:
                             pursuing_zombies.add(destination)
                     zombies = pursuing_zombies
+                    # Admit one zombie per step, rotating through free entrances.
+                    bullet_tiles = {(x, y) for x, y, _, _ in bullets}
+                    if health > 0 and pending_spawns:
+                        for offset in range(len(spawn_points)):
+                            index = (spawn_cursor + offset) % len(spawn_points)
+                            spawn = spawn_points[index]
+                            if spawn not in zombies and spawn != (player_x, player_y) and spawn not in bullet_tiles:
+                                zombies.add(spawn)
+                                pending_spawns -= 1
+                                spawn_cursor = (index + 1) % len(spawn_points)
+                                break
                     next_zombie_step += zombie_step_seconds
                 next_bullet_step += bullet_step_seconds
 
@@ -171,6 +188,12 @@ def main() -> None:
                 elif is_walkable(rows, shot_x, shot_y):
                     bullets.append((shot_x, shot_y, aim_x, aim_y))
 
+            # A wave includes queued arrivals. No declaring victory at the door.
+            if health > 0 and not zombies and pending_spawns == 0:
+                wave += 1
+                wave_size *= 2
+                pending_spawns = wave_size
+
             # Restore terrain first, then bullets, then the player on top.
             for x, y in old_bullet_tiles | old_zombies | {old_player}:
                 print(terminal.move_yx(y + 3, x) + rows[y][x], end="")
@@ -178,7 +201,8 @@ def main() -> None:
                 print(terminal.move_yx(y + 3, x) + "*", end="")
             for x, y in zombies:
                 print(terminal.move_yx(y + 3, x) + "Z", end="")
-            status = f"Health: {health} | Kills: {kills}"
+            remaining = len(zombies) + pending_spawns
+            status = f"Wave: {wave} | Health: {health} | Remaining: {remaining} | Kills: {kills}"
             if health == 0:
                 status += " | Game over. Press Q to quit."
             print(
