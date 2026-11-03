@@ -106,6 +106,39 @@ def difficulty_menu(terminal: Terminal, settings: Settings) -> Difficulty | None
             return PRESETS[selected]
 
 
+def game_over_menu(
+    terminal: Terminal, settings: Settings, difficulty: Difficulty, wave: int, kills: int
+) -> str:
+    """Offer a fresh run with the same choices, the main menu, or a clean exit."""
+    options = (("Play again", "replay"), ("Main menu", "menu"), ("Quit", "quit"))
+    selected = 0
+    while True:
+        print(terminal.home + terminal.clear, end="")
+        print(settings.paint(terminal, "Game over", "cyan"))
+        print(f"Difficulty: {difficulty.name}")
+        print(f"Wave reached: {wave} | Kills: {kills}")
+        print("The zombies would like to thank you for lunch.")
+        print()
+        for index, (label, _) in enumerate(options):
+            marker = ">" if index == selected else " "
+            text = f"{marker} {label}"
+            print(settings.paint(terminal, text, "cyan") if index == selected else text)
+        print()
+        print("W/S or Up/Down: select. Enter: confirm.")
+        print("Escape: main menu. Q: quit.", flush=True)
+        key = terminal.inkey()
+        if key.lower() == "q":
+            return "quit"
+        if key.name == "KEY_ESCAPE" or key == "\x1b":
+            return "menu"
+        if key.name == "KEY_UP" or key.lower() == "w":
+            selected = (selected - 1) % len(options)
+        elif key.name == "KEY_DOWN" or key.lower() == "s":
+            selected = (selected + 1) % len(options)
+        elif key.name == "KEY_ENTER" or key in ("\r", "\n"):
+            return options[selected][1]
+
+
 def main_menu(terminal: Terminal, settings: Settings) -> str:
     """Wait for Play or Quit, with optional pages sharing session settings."""
     options = (
