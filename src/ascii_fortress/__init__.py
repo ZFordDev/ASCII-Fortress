@@ -111,14 +111,18 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
     bullet_step_seconds = 0.1
     next_bullet_step = monotonic() + bullet_step_seconds
     zombie_step_seconds = 0.5
-    next_zombie_step = next_bullet_step - bullet_step_seconds + zombie_step_seconds
+    spawn_step_seconds = 0.5
+    attack_step_seconds = 0.5
 
     width, height = required_size(rows)
     if not wait_for_space(terminal, width, height):
         return
     # Waiting for a bigger terminal must not age the simulation.
-    next_bullet_step = monotonic() + bullet_step_seconds
-    next_zombie_step = monotonic() + zombie_step_seconds
+    clock_start = monotonic()
+    next_bullet_step = clock_start + bullet_step_seconds
+    next_zombie_step = clock_start + zombie_step_seconds
+    next_spawn_step = clock_start + spawn_step_seconds
+    next_attack_step = clock_start + attack_step_seconds
 
     def draw_status() -> None:
         """Keep the HUD compact enough for the smallest supported terminal."""
@@ -161,8 +165,11 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
         if not fits(terminal, width, height):
             if not wait_for_space(terminal, width, height):
                 return
-            next_bullet_step = monotonic() + bullet_step_seconds
-            next_zombie_step = monotonic() + zombie_step_seconds
+            clock_start = monotonic()
+            next_bullet_step = clock_start + bullet_step_seconds
+            next_zombie_step = clock_start + zombie_step_seconds
+            next_spawn_step = clock_start + spawn_step_seconds
+            next_attack_step = clock_start + attack_step_seconds
             draw_arena()
         size = (terminal.width, terminal.height)
         if size != last_size:
@@ -197,14 +204,23 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
                 else:
                     travelling_bullets.append((*destination, dx, dy))
             bullets = travelling_bullets
+            # Attacks have their own clock, not a bonus for walking faster.
+            if next_bullet_step >= next_attack_step:
+                contacts = sum(
+                    abs(x - player_x) + abs(y - player_y) == 1
+                    for x, y in zombies
+                )
+                health = max(0, health - contacts)
+                next_attack_step += attack_step_seconds
+            if health == 0:
+                break
             # Advance pursuit on the simulation clock, even without input.
             if next_bullet_step >= next_zombie_step:
                 pursuing_zombies = set()
                 for position in zombies:
                     destination = next_step_toward(rows, position, (player_x, player_y))
-                    # A blocked step into the player is a contact attack.
+                    # Stay beside the player; the attack clock handles damage.
                     if destination == (player_x, player_y):
-                        health = max(0, health - 1)
                         destination = position
                     # Preserve every zombie: sets must not merge two bodies.
                     if destination in zombies or destination in pursuing_zombies:
@@ -219,6 +235,8 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
                     else:
                         pursuing_zombies.add(destination)
                 zombies = pursuing_zombies
+                next_zombie_step += zombie_step_seconds
+            if next_bullet_step >= next_spawn_step:
                 # Admit one zombie per step, rotating through free entrances.
                 bullet_tiles = {(x, y) for x, y, _, _ in bullets}
                 if health > 0 and pending_spawns:
@@ -230,7 +248,7 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
                             pending_spawns -= 1
                             spawn_cursor = (index + 1) % len(spawn_points)
                             break
-                next_zombie_step += zombie_step_seconds
+                next_spawn_step += spawn_step_seconds
             next_bullet_step += bullet_step_seconds
 
         if health > 0 and key in directions:
