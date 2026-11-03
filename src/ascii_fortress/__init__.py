@@ -56,10 +56,10 @@ def main() -> None:
     # Return here after each run rather than nesting menus or game sessions.
     with terminal.fullscreen(), terminal.cbreak(), terminal.hidden_cursor():
         while main_menu(terminal, settings) == "play":
-            run_game(terminal, courtyard)
+            run_game(terminal, courtyard, settings)
 
 
-def run_game(terminal: Terminal, courtyard: str) -> None:
+def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
     """Play one fresh run using an already active terminal session."""
     rows = courtyard.splitlines()
     starts = [
@@ -105,7 +105,7 @@ def run_game(terminal: Terminal, courtyard: str) -> None:
     next_zombie_step = next_bullet_step - bullet_step_seconds + zombie_step_seconds
 
     print(terminal.home + terminal.clear, end="")
-    print("ASCII Fortress")
+    print(settings.paint(terminal, "ASCII Fortress", "cyan"))
     print("No graphics. No mercy. Just zombies.")
     print()
     for row in rows:
@@ -117,8 +117,8 @@ def run_game(terminal: Terminal, courtyard: str) -> None:
 
     # The map starts below the title, tagline, and blank line (row 3).
     for x, y in zombies:
-        print(terminal.move_yx(y + 3, x) + "Z", end="")
-    print(terminal.move_yx(player_y + 3, player_x) + facing, end="", flush=True)
+        print(terminal.move_yx(y + 3, x) + settings.paint(terminal, "Z", "green"), end="")
+    print(terminal.move_yx(player_y + 3, player_x) + settings.paint(terminal, facing, "cyan"), end="", flush=True)
     # Timed reads leave room for future game updates while nobody is typing.
     while True:
         # Input must not control bullet speed: idle shots keep travelling.
@@ -208,9 +208,9 @@ def run_game(terminal: Terminal, courtyard: str) -> None:
         for x, y in old_bullet_tiles | old_zombies | {old_player}:
             print(terminal.move_yx(y + 3, x) + rows[y][x], end="")
         for x, y, _, _ in bullets:
-            print(terminal.move_yx(y + 3, x) + "*", end="")
+            print(terminal.move_yx(y + 3, x) + settings.paint(terminal, "*", "yellow"), end="")
         for x, y in zombies:
-            print(terminal.move_yx(y + 3, x) + "Z", end="")
+            print(terminal.move_yx(y + 3, x) + settings.paint(terminal, "Z", "green"), end="")
         remaining = len(zombies) + pending_spawns
         status = f"Wave: {wave} | Health: {health} | Remaining: {remaining} | Kills: {kills}"
         if health == 0:
@@ -219,4 +219,4 @@ def run_game(terminal: Terminal, courtyard: str) -> None:
             terminal.move_yx(len(rows) + 6, 0) + status + terminal.clear_eol,
             end="",
         )
-        print(terminal.move_yx(player_y + 3, player_x) + facing, end="", flush=True)
+        print(terminal.move_yx(player_y + 3, player_x) + settings.paint(terminal, facing, "cyan"), end="", flush=True)
