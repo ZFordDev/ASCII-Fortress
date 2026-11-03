@@ -5,7 +5,8 @@ from time import monotonic
 
 from blessed import Terminal
 
-from ascii_fortress.menus import main_menu, map_size_menu
+from ascii_fortress.menus import main_menu, map_size_menu, difficulty_menu
+from ascii_fortress.difficulty import Difficulty
 from ascii_fortress.settings import Settings
 from ascii_fortress.display import fits, required_size, wait_for_space
 
@@ -72,12 +73,17 @@ def main() -> None:
     # Return here after each run rather than nesting menus or game sessions.
     with terminal.fullscreen(), terminal.cbreak(), terminal.hidden_cursor():
         while main_menu(terminal, settings) == "play":
-            size = map_size_menu(terminal, settings, maps)
-            if size is not None:
-                run_game(terminal, maps[size], settings)
+            while True:
+                size = map_size_menu(terminal, settings, maps)
+                if size is None:
+                    break
+                difficulty = difficulty_menu(terminal, settings)
+                if difficulty is not None:
+                    run_game(terminal, maps[size], settings, difficulty)
+                    break
 
 
-def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
+def run_game(terminal: Terminal, courtyard: str, settings: Settings, difficulty: Difficulty) -> None:
     """Play one fresh run using an already active terminal session."""
     rows = courtyard.splitlines()
     starts = [
@@ -101,7 +107,7 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
         raise SystemExit("The courtyard must have at least one zombie spawn (X).")
     # Position maps to remaining health; movement must carry health with it.
     zombies: dict[tuple[int, int], int] = {}
-    zombie_health = 1
+    zombie_health = difficulty.zombie_health
     wave = 1
     wave_size = 2
     pending_spawns = wave_size
@@ -121,8 +127,8 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
     bullets: list[tuple[int, int, int, int]] = []
     bullet_step_seconds = 0.1
     next_bullet_step = monotonic() + bullet_step_seconds
-    zombie_step_seconds = 0.5
-    spawn_step_seconds = 0.5
+    zombie_step_seconds = difficulty.movement_seconds
+    spawn_step_seconds = difficulty.spawn_seconds
     attack_step_seconds = 0.5
 
     width, height = required_size(rows)
@@ -151,7 +157,7 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
         """Repaint terrain and actors after the terminal changes size."""
         print(terminal.home + terminal.clear, end="")
         print(settings.paint(terminal, "ASCII Fortress", "cyan"))
-        print("No graphics. No mercy. Just zombies.")
+        print(f"Difficulty: {difficulty.name}")
         print()
         for row in rows:
             print(row)
