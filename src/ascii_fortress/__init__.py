@@ -7,6 +7,7 @@ from blessed import Terminal
 
 from ascii_fortress.menus import main_menu, map_size_menu
 from ascii_fortress.settings import Settings
+from ascii_fortress.display import fits, required_size, wait_for_space
 
 
 def is_walkable(rows: list[str], x: int, y: int) -> bool:
@@ -105,30 +106,71 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
     zombie_step_seconds = 0.5
     next_zombie_step = next_bullet_step - bullet_step_seconds + zombie_step_seconds
 
-    print(terminal.home + terminal.clear, end="")
-    print(settings.paint(terminal, "ASCII Fortress", "cyan"))
-    print("No graphics. No mercy. Just zombies.")
-    print()
-    for row in rows:
-        print(row)
-    print()
-    print("WASD: move and aim. Space: shoot.")
-    print("Press Q to return to the main menu.", flush=True)
-    print(f"Wave: {wave} | Health: {health} | Remaining: {pending_spawns} | Kills: {kills}", flush=True)
+    width, height = required_size(rows)
+    if not wait_for_space(terminal, width, height):
+        return
+    # Waiting for a bigger terminal must not age the simulation.
+    next_bullet_step = monotonic() + bullet_step_seconds
+    next_zombie_step = monotonic() + zombie_step_seconds
 
-    # The map starts below the title, tagline, and blank line (row 3).
-    for x, y in zombies:
-        print(terminal.move_yx(y + 3, x) + settings.paint(terminal, "Z", "green"), end="")
-    print(terminal.move_yx(player_y + 3, player_x) + settings.paint(terminal, facing, "cyan"), end="", flush=True)
+    def draw_status() -> None:
+        """Keep the HUD compact enough for the smallest supported terminal."""
+        remaining = len(zombies) + pending_spawns
+        # Bound large counters to the HUD width instead of wrapping the arena.
+        for offset, status in enumerate((
+            f"Wave: {wave} | Health: {health}",
+            f"Remaining: {remaining} | Kills: {kills}",
+            "Game over. Q: main menu." if health == 0 else "",
+        )):
+            print(terminal.move_yx(len(rows) + 6 + offset, 0)
+                  + status[:terminal.width - 1] + terminal.clear_eol, end="")
+
+    def draw_arena() -> None:
+        """Repaint terrain and actors after the terminal changes size."""
+        print(terminal.home + terminal.clear, end="")
+        print(settings.paint(terminal, "ASCII Fortress", "cyan"))
+        print("No graphics. No mercy. Just zombies.")
+        print()
+        for row in rows:
+            print(row)
+        print()
+        print("WASD: move/aim. Space: shoot.")
+        print("Q: main menu.", flush=True)
+
+        # The map starts below the title, tagline, and blank line (row 3).
+        for x, y in zombies:
+            print(terminal.move_yx(y + 3, x) + settings.paint(terminal, "Z", "green"), end="")
+        print(terminal.move_yx(player_y + 3, player_x) + settings.paint(terminal, facing, "cyan"), end="", flush=True)
+        for x, y, _, _ in bullets:
+            print(terminal.move_yx(y + 3, x) + settings.paint(terminal, "*", "yellow"), end="")
+
+        draw_status()
+        print(end="", flush=True)
+
+    draw_arena()
+    last_size = (terminal.width, terminal.height)
     # Timed reads leave room for future game updates while nobody is typing.
     while True:
+        if not fits(terminal, width, height):
+            if not wait_for_space(terminal, width, height):
+                return
+            next_bullet_step = monotonic() + bullet_step_seconds
+            next_zombie_step = monotonic() + zombie_step_seconds
+            draw_arena()
+        size = (terminal.width, terminal.height)
+        if size != last_size:
+            draw_arena()
+            last_size = size
         # Input must not control bullet speed: idle shots keep travelling.
         timeout = 0.1 if health == 0 else max(0.0, next_bullet_step - monotonic())
         key = terminal.inkey(timeout=timeout).lower()
         if key == "q":
             break
+        if not fits(terminal, width, height):
+            continue
         if health == 0:
             # Leave the final arena visible, but the run is over.
+            draw_status()
             continue
 
         old_player = (player_x, player_y)
@@ -212,12 +254,5 @@ def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:
             print(terminal.move_yx(y + 3, x) + settings.paint(terminal, "*", "yellow"), end="")
         for x, y in zombies:
             print(terminal.move_yx(y + 3, x) + settings.paint(terminal, "Z", "green"), end="")
-        remaining = len(zombies) + pending_spawns
-        status = f"Wave: {wave} | Health: {health} | Remaining: {remaining} | Kills: {kills}"
-        if health == 0:
-            status += " | Game over. Q: main menu."
-        print(
-            terminal.move_yx(len(rows) + 6, 0) + status + terminal.clear_eol,
-            end="",
-        )
+        draw_status()
         print(terminal.move_yx(player_y + 3, player_x) + settings.paint(terminal, facing, "cyan"), end="", flush=True)
