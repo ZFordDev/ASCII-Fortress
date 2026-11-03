@@ -1,6 +1,7 @@
 # Maps
 
-Each `.txt` file is one handcrafted map. The launcher loads `courtyard.txt`
+Each `.txt` file is one handcrafted map. Small loads `courtyard.txt` (21 x 11);
+Medium loads `barracks.txt` (41 x 19). The launcher uses the selected map
 for a movement prototype, placing the player at the start and replacing spawn
 markers with ground. WASD moves one tile per received keypress and changes
 facing, including when a wall blocks the step. Space fires a travelling `*`
@@ -22,3 +23,7 @@ Spawn markers are map data and will not be shown during gameplay.
 
 The courtyard has four zombie entrances and gaps in its inner walls to keep
 the walkable area connected. Apparently, fortress security took the day off.
+
+The barracks has four corner entrances, four solid bunk blocks, and a central
+dividing wall with three passages. Every walkable tile connects to the player
+start. The bunk blocks are excellent cover; actual beds are outside the budget.
