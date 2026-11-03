@@ -45,20 +45,23 @@ def main() -> None:
         return
 
     # Resolve from the source file so launching from another folder still works.
-    map_path = Path(__file__).resolve().parents[2] / "maps" / "courtyard.txt"
-    try:
-        courtyard = map_path.read_text(encoding="ascii")
-    except (OSError, UnicodeError) as error:
-        # Load before entering fullscreen so errors stay visible in the shell.
-        raise SystemExit(f"Could not load courtyard map: {error}") from error
+    maps_path = Path(__file__).resolve().parents[2] / "maps"
+    maps = {}
+    for size, filename in (("small", "courtyard.txt"), ("medium", "barracks.txt")):
+        try:
+            maps[size] = (maps_path / filename).read_text(encoding="ascii")
+        except (OSError, UnicodeError) as error:
+            # Load before entering fullscreen so errors stay visible in the shell.
+            raise SystemExit(f"Could not load {filename}: {error}") from error
 
     terminal = Terminal()
     settings = Settings()
     # Return here after each run rather than nesting menus or game sessions.
     with terminal.fullscreen(), terminal.cbreak(), terminal.hidden_cursor():
         while main_menu(terminal, settings) == "play":
-            if map_size_menu(terminal, settings, courtyard) == "small":
-                run_game(terminal, courtyard, settings)
+            size = map_size_menu(terminal, settings, maps)
+            if size is not None:
+                run_game(terminal, maps[size], settings)
 
 
 def run_game(terminal: Terminal, courtyard: str, settings: Settings) -> None:

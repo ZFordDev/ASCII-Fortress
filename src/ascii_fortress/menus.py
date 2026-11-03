@@ -38,16 +38,21 @@ def settings_menu(terminal: Terminal, settings: Settings) -> None:
             settings.colour = not settings.colour
 
 
-def map_size_menu(terminal: Terminal, settings: Settings, courtyard: str) -> str | None:
+def map_size_menu(terminal: Terminal, settings: Settings, maps: dict[str, str]) -> str | None:
     """Choose an available size, or go back without starting a run."""
-    width, height = required_size(courtyard.splitlines())
+    sizes = ("small", "medium", "large")
     selected = 0
     while True:
-        available = fits(terminal, width, height)
-        label = f"Small (needs {width} x {height} terminal)"
-        if not available:
-            label += " - too small"
-        options = (label, "Medium (coming soon)", "Large (coming soon)")
+        options = []
+        for size in sizes:
+            if size not in maps:
+                options.append(f"{size.title()} (coming soon)")
+                continue
+            width, height = required_size(maps[size].splitlines())
+            label = f"{size.title()} (needs {width} x {height} terminal)"
+            if not fits(terminal, width, height):
+                label += " - too small"
+            options.append(label)
         print(terminal.home + terminal.clear, end="")
         print(settings.paint(terminal, "Choose map size", "cyan"))
         print("More arena tiles, not bigger characters.")
@@ -68,8 +73,9 @@ def map_size_menu(terminal: Terminal, settings: Settings, courtyard: str) -> str
         elif key.name == "KEY_DOWN" or key.lower() == "s":
             selected = (selected + 1) % len(options)
         elif key.name == "KEY_ENTER" or key in ("\r", "\n"):
-            if selected == 0 and available:
-                return "small"
+            size = sizes[selected]
+            if size in maps and fits(terminal, *required_size(maps[size].splitlines())):
+                return size
             # Keep unavailable sizes on this screen until their maps exist.
 
 
