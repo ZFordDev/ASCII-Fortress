@@ -1,7 +1,7 @@
 # ASCII Fortress
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.8%2B-brightgreen.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.12%2B-brightgreen.svg)](https://www.python.org/)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg)
 
 **No graphics. No mercy. Just zombies.**
@@ -25,7 +25,15 @@ Grab your imaginary gun, find a chokepoint, and survive increasingly ridiculous 
 
 ## Getting Started
 
-**Coming soon!** The zombies are still getting dressed.
+Development has just started. The launcher currently shows a welcome message, planned controls, and the survival goal, gameplay is coming later. The zombies are still getting dressed.
+
+With [uv](https://docs.astral.sh/uv/) installed, run the following from the project directory (the folder containing `pyproject.toml`):
+
+```sh
+uv run ascii-fortress
+```
+
+The project requires Python 3.12 or newer. uv manages the project environment and installs the package when you run it.
 
 ## More Info
 
