@@ -71,6 +71,7 @@ def main() -> None:
     # One zombie for now. The rest are still filling out onboarding paperwork.
     zombies = {spawn_points[0]}
     kills = 0
+    health = 3
     # Keep the terrain separate so walking away leaves ground behind.
     rows = [row.replace("X", ".").replace("^", ".") for row in rows]
     directions = {
@@ -99,7 +100,7 @@ def main() -> None:
         print()
         print("WASD: move and aim. Space: shoot.")
         print("Press Q to quit.", flush=True)
-        print("Zombie: one hit to kill. No player damage yet. Kills: 0", flush=True)
+        print(f"Health: {health} | Kills: {kills}", flush=True)
 
         # The map starts below the title, tagline, and blank line (row 3).
         for x, y in zombies:
@@ -108,16 +109,19 @@ def main() -> None:
         # Timed reads leave room for future game updates while nobody is typing.
         while True:
             # Input must not control bullet speed: idle shots keep travelling.
-            timeout = max(0.0, next_bullet_step - monotonic())
+            timeout = 0.1 if health == 0 else max(0.0, next_bullet_step - monotonic())
             key = terminal.inkey(timeout=timeout).lower()
             if key == "q":
                 break
+            if health == 0:
+                # Leave the final arena visible, but the run is over.
+                continue
 
             old_player = (player_x, player_y)
             old_bullet_tiles = {(x, y) for x, y, _, _ in bullets}
             old_zombies = zombies.copy()
             now = monotonic()
-            while now >= next_bullet_step:
+            while health > 0 and now >= next_bullet_step:
                 # Walls win every argument. Bullets disappear on contact.
                 travelling_bullets = []
                 for x, y, dx, dy in bullets:
@@ -135,8 +139,9 @@ def main() -> None:
                     pursuing_zombies = set()
                     for position in zombies:
                         destination = next_step_toward(rows, position, (player_x, player_y))
-                        # Stop beside the player until contact damage is added.
+                        # A blocked step into the player is a contact attack.
                         if destination == (player_x, player_y):
+                            health = max(0, health - 1)
                             destination = position
                         hit = next(
                             (i for i, bullet in enumerate(bullets) if bullet[:2] == destination),
@@ -151,12 +156,12 @@ def main() -> None:
                     next_zombie_step += zombie_step_seconds
                 next_bullet_step += bullet_step_seconds
 
-            if key in directions:
+            if health > 0 and key in directions:
                 aim_x, aim_y, facing = directions[key]
                 next_x, next_y = player_x + aim_x, player_y + aim_y
                 if is_walkable(rows, next_x, next_y) and (next_x, next_y) not in zombies:
                     player_x, player_y = next_x, next_y
-            elif key == " ":
+            elif health > 0 and key == " ":
                 # One shot per received Space, with no ammo limit or cooldown.
                 shot_x, shot_y = player_x + aim_x, player_y + aim_y
                 # An adjacent target is hit immediately instead of skipped over.
@@ -173,11 +178,11 @@ def main() -> None:
                 print(terminal.move_yx(y + 3, x) + "*", end="")
             for x, y in zombies:
                 print(terminal.move_yx(y + 3, x) + "Z", end="")
-            if kills:
-                print(
-                    terminal.move_yx(len(rows) + 6, 0)
-                    + f"Target defeated! Kills: {kills}"
-                    + terminal.clear_eol,
-                    end="",
-                )
+            status = f"Health: {health} | Kills: {kills}"
+            if health == 0:
+                status += " | Game over. Press Q to quit."
+            print(
+                terminal.move_yx(len(rows) + 6, 0) + status + terminal.clear_eol,
+                end="",
+            )
             print(terminal.move_yx(player_y + 3, player_x) + facing, end="", flush=True)
