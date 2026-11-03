@@ -25,31 +25,7 @@ Grab your imaginary gun, find a chokepoint, and survive increasingly ridiculous 
 
 ## Getting Started
 
-Development has just started. Explore the fullscreen courtyard with `WASD`, fire with `Space`, and press `Q` to quit. Walls block movement, and your character turns to face the direction you press. Bullets travel in that direction and stop at walls.
-
-One stationary `Z` target appears at the first map spawn point (top-left in the
-courtyard). It blocks movement and disappears after one bullet hit, increasing
-the displayed kill count. Restart the command for another target. Zombie
-pursuit, player damage, and waves are coming later.
-
-Movement currently advances one tile per received keypress; holding a key uses
-your terminal's keyboard repeat behaviour.
-Each received Space fires one bullet, with unlimited ammo and no firing cooldown.
-Bullets move ten tiles per second independently of keyboard input. Holding keys
-and moving while shooting still need testing on Windows and Linux terminals.
-
-With [uv](https://docs.astral.sh/uv/) installed, run the following from the project directory (the folder containing `pyproject.toml`):
-
-```sh
-uv run ascii-fortress
-```
-
-The project requires Python 3.12 or newer. uv manages the project environment and installs the package when you run it.
-
-Run in an interactive terminal, such as Windows Terminal or a Linux terminal.
-
-The preview currently loads `maps/courtyard.txt` from the source checkout.
-Keep that folder alongside `src`; standalone package distribution is a later step.
+Early development! See the [setup and prototype guide](https://github.com/ZFordDev/ascii-fortress/wiki/Getting-Started) to try it out.
 
 ## More Info
 

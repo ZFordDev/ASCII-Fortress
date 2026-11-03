@@ -1,4 +1,5 @@
 import sys
+from collections import deque
 from pathlib import Path
 from time import monotonic
 
@@ -8,6 +9,28 @@ from blessed import Terminal
 def is_walkable(rows: list[str], x: int, y: int) -> bool:
     """Check terrain bounds before allowing a player or bullet onto a tile."""
     return 0 <= y < len(rows) and 0 <= x < len(rows[y]) and rows[y][x] == "."
+
+
+def next_step_toward(
+    rows: list[str], start: tuple[int, int], goal: tuple[int, int]
+) -> tuple[int, int]:
+    """Find the first step on a shortest four-direction path, or stay put."""
+    frontier = deque([start])
+    previous = {start: start}
+    # Breadth-first search explores nearby tiles before more distant ones.
+    while frontier:
+        x, y = frontier.popleft()
+        if (x, y) == goal:
+            step = goal
+            while step != start and previous[step] != start:
+                step = previous[step]
+            return step
+        for dx, dy in ((0, -1), (-1, 0), (0, 1), (1, 0)):
+            neighbor = (x + dx, y + dy)
+            if neighbor not in previous and is_walkable(rows, *neighbor):
+                previous[neighbor] = (x, y)
+                frontier.append(neighbor)
+    return start
 
 
 def main() -> None:
@@ -45,7 +68,7 @@ def main() -> None:
     ]
     if not spawn_points:
         raise SystemExit("The courtyard must have at least one zombie spawn (X).")
-    # One stationary target for now. Even zombies need a training day.
+    # One zombie for now. The rest are still filling out onboarding paperwork.
     zombies = {spawn_points[0]}
     kills = 0
     # Keep the terrain separate so walking away leaves ground behind.
@@ -61,6 +84,8 @@ def main() -> None:
     bullets: list[tuple[int, int, int, int]] = []
     bullet_step_seconds = 0.1
     next_bullet_step = monotonic() + bullet_step_seconds
+    zombie_step_seconds = 0.5
+    next_zombie_step = next_bullet_step - bullet_step_seconds + zombie_step_seconds
 
     terminal = Terminal()
     # Context managers restore the screen, cursor, and input mode on exit.
@@ -74,7 +99,7 @@ def main() -> None:
         print()
         print("WASD: move and aim. Space: shoot.")
         print("Press Q to quit.", flush=True)
-        print("Stationary target: one hit to kill. Kills: 0", flush=True)
+        print("Zombie: one hit to kill. No player damage yet. Kills: 0", flush=True)
 
         # The map starts below the title, tagline, and blank line (row 3).
         for x, y in zombies:
@@ -105,6 +130,25 @@ def main() -> None:
                     else:
                         travelling_bullets.append((*destination, dx, dy))
                 bullets = travelling_bullets
+                # Advance pursuit on the simulation clock, even without input.
+                if next_bullet_step >= next_zombie_step:
+                    pursuing_zombies = set()
+                    for position in zombies:
+                        destination = next_step_toward(rows, position, (player_x, player_y))
+                        # Stop beside the player until contact damage is added.
+                        if destination == (player_x, player_y):
+                            destination = position
+                        hit = next(
+                            (i for i, bullet in enumerate(bullets) if bullet[:2] == destination),
+                            None,
+                        )
+                        if hit is not None:
+                            bullets.pop(hit)
+                            kills += 1
+                        else:
+                            pursuing_zombies.add(destination)
+                    zombies = pursuing_zombies
+                    next_zombie_step += zombie_step_seconds
                 next_bullet_step += bullet_step_seconds
 
             if key in directions:
