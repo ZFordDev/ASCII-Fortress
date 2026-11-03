@@ -4,6 +4,7 @@ from blessed import Terminal
 
 from ascii_fortress.settings import Settings
 from ascii_fortress.display import fits, required_size
+from ascii_fortress.difficulty import Difficulty, PRESETS
 
 
 def show_page(terminal: Terminal, settings: Settings, title: str, lines: tuple[str, ...]) -> None:
@@ -79,6 +80,32 @@ def map_size_menu(terminal: Terminal, settings: Settings, maps: dict[str, str]) 
             # Keep unavailable sizes on this screen until their maps exist.
 
 
+def difficulty_menu(terminal: Terminal, settings: Settings) -> Difficulty | None:
+    """Choose run rules, or return to map-size selection."""
+    selected = 0
+    while True:
+        print(terminal.home + terminal.clear, end="")
+        print(settings.paint(terminal, "Choose difficulty", "cyan"))
+        print()
+        for index, preset in enumerate(PRESETS):
+            marker = ">" if index == selected else " "
+            text = f"{marker} {preset.name}"
+            print(settings.paint(terminal, text, "cyan") if index == selected else text)
+        print()
+        print(PRESETS[selected].description)
+        print("W/S or Up/Down: select. Enter: play.")
+        print("Escape or Q: back to map size.", flush=True)
+        key = terminal.inkey()
+        if key.name == "KEY_ESCAPE" or key == "\x1b" or key.lower() == "q":
+            return None
+        if key.name == "KEY_UP" or key.lower() == "w":
+            selected = (selected - 1) % len(PRESETS)
+        elif key.name == "KEY_DOWN" or key.lower() == "s":
+            selected = (selected + 1) % len(PRESETS)
+        elif key.name == "KEY_ENTER" or key in ("\r", "\n"):
+            return PRESETS[selected]
+
+
 def main_menu(terminal: Terminal, settings: Settings) -> str:
     """Wait for Play or Quit, with optional pages sharing session settings."""
     options = (
@@ -119,7 +146,7 @@ def main_menu(terminal: Terminal, settings: Settings) -> str:
                     "WASD: move and face that direction.",
                     "Space: shoot where you face. Ammo is unlimited.",
                     "Walls stop you, zombies, and bullets.",
-                    "Z means zombie. One bullet sorts it out.",
+                    "Z means zombie. Tougher modes need more hits.",
                     "You have 3 health. Zombie contact hurts. No healing.",
                     "Clear a wave. Next wave has twice the zombies.",
                     "Survive as many waves as you can.",
