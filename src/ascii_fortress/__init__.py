@@ -6,6 +6,7 @@ from time import monotonic
 from blessed import Terminal
 
 from ascii_fortress.menus import main_menu
+from ascii_fortress.settings import Settings
 
 
 def is_walkable(rows: list[str], x: int, y: int) -> bool:
@@ -51,9 +52,10 @@ def main() -> None:
         raise SystemExit(f"Could not load courtyard map: {error}") from error
 
     terminal = Terminal()
+    settings = Settings()
     # Return here after each run rather than nesting menus or game sessions.
     with terminal.fullscreen(), terminal.cbreak(), terminal.hidden_cursor():
-        while main_menu(terminal) == "play":
+        while main_menu(terminal, settings) == "play":
             run_game(terminal, courtyard)
 
 

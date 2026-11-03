@@ -2,11 +2,13 @@
 
 from blessed import Terminal
 
+from ascii_fortress.settings import Settings
 
-def show_page(terminal: Terminal, title: str, lines: tuple[str, ...]) -> None:
+
+def show_page(terminal: Terminal, settings: Settings, title: str, lines: tuple[str, ...]) -> None:
     """Show a short information page, then return to the existing menu."""
     print(terminal.home + terminal.clear, end="")
-    print(title)
+    print(settings.paint(terminal, title, "cyan"))
     print()
     for line in lines:
         print(line)
@@ -18,24 +20,42 @@ def show_page(terminal: Terminal, title: str, lines: tuple[str, ...]) -> None:
             return
 
 
-def main_menu(terminal: Terminal) -> str:
-    """Wait for Play or Quit; unfinished pages cannot be opened yet."""
+def settings_menu(terminal: Terminal, settings: Settings) -> None:
+    """Toggle session colour without forcing effects on the player."""
+    while True:
+        print(terminal.home + terminal.clear, end="")
+        print(settings.paint(terminal, "Settings", "cyan"))
+        print()
+        state = "On" if settings.colour else "Off"
+        print(settings.paint(terminal, f"> Colour: {state}", "cyan"))
+        print("Enter or Space: toggle. Escape or Q: back.")
+        print("Applies to this session. New launches start with colour Off.", flush=True)
+        key = terminal.inkey()
+        if key.name == "KEY_ESCAPE" or key == "\x1b" or key.lower() == "q":
+            return
+        if key.name == "KEY_ENTER" or key in ("\r", "\n", " "):
+            settings.colour = not settings.colour
+
+
+def main_menu(terminal: Terminal, settings: Settings) -> str:
+    """Wait for Play or Quit, with optional pages sharing session settings."""
     options = (
         "Play",
         "How to",
-        "Settings (coming soon)",
+        "Settings",
         "Credits",
         "Quit",
     )
     selected = 0
     while True:
         print(terminal.home + terminal.clear, end="")
-        print("ASCII Fortress")
+        print(settings.paint(terminal, "ASCII Fortress", "cyan"))
         print("No graphics. No mercy. Just zombies.")
         print()
         for index, label in enumerate(options):
             marker = ">" if index == selected else " "
-            print(f"{marker} {label}")
+            text = f"{marker} {label}"
+            print(settings.paint(terminal, text, "cyan") if index == selected else text)
         print()
         print("Up/Down or W/S: select. Enter: confirm. Q: quit.", flush=True)
 
@@ -53,7 +73,7 @@ def main_menu(terminal: Terminal) -> str:
             if selected == len(options) - 1:
                 return "quit"
             if selected == 1:
-                show_page(terminal, "How to survive (briefly)", (
+                show_page(terminal, settings, "How to survive (briefly)", (
                     "WASD: move and face that direction.",
                     "Space: shoot where you face. Ammo is unlimited.",
                     "Walls stop you, zombies, and bullets.",
@@ -65,9 +85,10 @@ def main_menu(terminal: Terminal) -> str:
                     "",
                     "Ammo is unlimited. Your personal space is not.",
                 ))
+            elif selected == 2:
+                settings_menu(terminal, settings)
             elif selected == 3:
-                show_page(terminal, "Credits", (
+                show_page(terminal, settings, "Credits", (
                     "ASCII Fortress", "Development: ZFordDev", "",
                     "Zombies: unpaid extras. Still demanding more brains.",
                 ))
-            # Settings stays labelled coming soon until its controls exist.
