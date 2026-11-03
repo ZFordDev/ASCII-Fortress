@@ -25,7 +25,7 @@ Grab your imaginary gun, find a chokepoint, and survive increasingly ridiculous 
 
 ## Getting Started
 
-Development has just started. The launcher uses Blessed to show a fullscreen welcome, planned controls, and the survival goal. Press `Q` to quit. Gameplay is coming later. The zombies are still getting dressed.
+Development has just started. The launcher uses Blessed to show a fullscreen courtyard map preview. Press `Q` to quit. Movement and shooting are coming later. The zombies are still getting dressed.
 
 With [uv](https://docs.astral.sh/uv/) installed, run the following from the project directory (the folder containing `pyproject.toml`):
 
@@ -36,6 +36,9 @@ uv run ascii-fortress
 The project requires Python 3.12 or newer. uv manages the project environment and installs the package when you run it.
 
 Run in an interactive terminal, such as Windows Terminal or a Linux terminal.
+
+The preview currently loads `maps/courtyard.txt` from the source checkout.
+Keep that folder alongside `src`; standalone package distribution is a later step.
 
 ## More Info
 

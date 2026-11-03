@@ -1,7 +1,8 @@
 # Maps
 
-Each `.txt` file is one handcrafted map. `courtyard.txt` is the first test map;
-the game does not load it yet.
+Each `.txt` file is one handcrafted map. The launcher loads `courtyard.txt`
+for a static preview, showing the player start and replacing spawn markers
+with ground. Movement and shooting are not implemented yet.
 
 Keep map files as plain ASCII grids with equal-length rows and a solid outer
 wall. Put explanations here rather than inside the grid, where every character
