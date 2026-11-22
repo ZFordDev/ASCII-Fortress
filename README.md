@@ -43,10 +43,6 @@ uv run ascii-fortress
 Choose your map size and difficulty, then try not to become lunch.
 See [Getting Started](https://github.com/ZFordDev/ascii-fortress/wiki/Getting-Started) for setup details.
 
-## More Info
-
-Want the rules or the story of my first game? Check out the [GitHub Wiki](https://github.com/ZFordDev/ascii-fortress/wiki).
-
 ## License
 
 Free and open source under the [Apache License 2.0](LICENSE).
