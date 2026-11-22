@@ -10,6 +10,13 @@ ASCII Fortress is a tiny terminal-based zombie survival game written in Python.
 
 Grab your imaginary gun, find a chokepoint, and survive increasingly ridiculous waves of zombies. They're not particularly smart, but there's a lot of them.
 
+> [!IMPORTANT]
+> ASCII Fortress was a fun little experiment.
+>
+> I've decided to wrap things up and move on to other projects. There won't be any further updates, but the game and its source code will remain available for anyone interested.
+>
+> Thanks for checking it out!
+
 ## 🎮 How to Play
 
 | Key | Action |
