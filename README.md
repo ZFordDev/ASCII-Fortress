@@ -41,7 +41,6 @@ uv run ascii-fortress
 ```
 
 Choose your map size and difficulty, then try not to become lunch.
-See [Getting Started](https://github.com/ZFordDev/ascii-fortress/wiki/Getting-Started) for setup details.
 
 ## License
 
